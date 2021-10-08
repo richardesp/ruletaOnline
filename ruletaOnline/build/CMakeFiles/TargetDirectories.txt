@@ -1,4 +1,0 @@
-/home/ricardo/Universidad/Tercero/Redes/Practica/P2/ruletaOnline-main/ruletaOnline/build/CMakeFiles/rebuild_cache.dir
-/home/ricardo/Universidad/Tercero/Redes/Practica/P2/ruletaOnline-main/ruletaOnline/build/CMakeFiles/edit_cache.dir
-/home/ricardo/Universidad/Tercero/Redes/Practica/P2/ruletaOnline-main/ruletaOnline/build/CMakeFiles/client.exe.dir
-/home/ricardo/Universidad/Tercero/Redes/Practica/P2/ruletaOnline-main/ruletaOnline/build/CMakeFiles/server.exe.dir
