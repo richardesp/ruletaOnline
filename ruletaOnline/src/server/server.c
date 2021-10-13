@@ -387,10 +387,12 @@ int main(int argc, char **argv)
                                             perror("Error al invocar a send().");
                                         }*/
 
-                                        char refranEncriptado[64] = "_____ ______ __"; // De esto te encargas tu nick
+                                        // De esto te encargas tu nick
+                                        char refran[64] = "Por la boca muere el pez";
+                                         struct Juego juego = crearCifrado(refran);
 
                                         bzero(buffer, sizeof(buffer));
-                                        sprintf(buffer, "+Ok. Empieza la partida. FRASE: %s.\n+Ok. Turno de partida\n", refranEncriptado);
+                                        sprintf(buffer, "+Ok. Empieza la partida. FRASE: %s.\n+Ok. Turno de partida\n", juego.fraseCifrada);
 
                                         // Empieza el jugador que estaba en la cola esperando
                                         if (send(arrayClientes[indexPlayer1].sd, buffer, sizeof(buffer), 0) == -1)
@@ -399,7 +401,7 @@ int main(int argc, char **argv)
                                         }
 
                                         bzero(buffer, sizeof(buffer));
-                                        sprintf(buffer, "+Ok. Empieza la partida. FRASE: %s.\n+Ok. Turno del otro jugador\n", refranEncriptado);
+                                        sprintf(buffer, "+Ok. Empieza la partida. FRASE: %s.\n+Ok. Turno del otro jugador\n", juego.fraseCifrada);
 
                                         if (send(arrayClientes[indexPlayer2].sd, buffer, sizeof(buffer), 0) == -1)
                                         {
