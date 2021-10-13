@@ -10,7 +10,6 @@ struct Juego
     char fraseCifrada[100];
     int puntosPlayer1;
     int puntosPlayer2;
-
 };
 
 struct Juego crearCifrado(char frase[])
@@ -29,8 +28,8 @@ struct Juego crearCifrado(char frase[])
     struct Juego juego;
     strcpy(juego.frase, frase);
     strcpy(juego.fraseCifrada, frasecifrada);
-    juego.puntosPlayer1=0;
-    juego.puntosPlayer2=0;
+    juego.puntosPlayer1 = 0;
+    juego.puntosPlayer2 = 0;
     return juego;
 }
 
@@ -41,6 +40,16 @@ int apareceLetra(char letra, struct Juego juego)
     return -1;
 }
 
+int numeroOcurrenciasLetra(char letra, struct Juego juego) {
+    int count = 0;
+    for(int i = 0; juego.frase[i] != '\0'; ++i) {
+        if(juego.frase[i] == letra)
+            ++count;
+    }
+
+    return count;
+}
+
 int letraEscogida(char letra, struct Juego juego)
 {
     if (strchr(juego.fraseCifrada, letra))
@@ -48,32 +57,44 @@ int letraEscogida(char letra, struct Juego juego)
     return -1;
 }
 
-int descifrarLetra(char letra, struct Juego *juego,int jugador)
+int descifrarLetra(char letra, struct Juego *juego, int jugador)
 {
-    if(apareceLetra(letra,*juego)!= 0){
-        printf("La letra no aparece\n");
+    if (apareceLetra(letra, *juego) != 0)
+    {
+        
+        // La letra no aparece
+        return 0;
     }
-    if(letraEscogida(letra,*juego) == 0){
-        printf("La letra ya fue escogida\n");
+    if (letraEscogida(letra, *juego) == 0)
+    {
+        // La letra ya fue escogida
+        return 1;
     }
-    int puntuacion=0;
+    int puntuacion = 0;
     int contador = 0;
-    if(letra == 'a'| letra == 'e' || letra == 'i' || letra == 'o' || letra == 'u'){
-        puntuacion=-50;}
-    if(jugador == 1){
-        if(juego->puntosPlayer1 <= 0){
-            printf("No tienes puntos para averiguar vocal\n");
-        return 0;
+    if (letra == 'a' | letra == 'e' || letra == 'i' || letra == 'o' || letra == 'u')
+    {
+        puntuacion = -50;
+    }
+    if (jugador == 1)
+    {
+        if (juego->puntosPlayer1 <= 0)
+        {
+            // No hay puntos para averigurar la vocal
+            return 2;
         }
     }
-    if(jugador == 2){
-        if(juego->puntosPlayer2 <= 0){
-            printf("No tienes puntos para averiguar vocal\n");
-        return 0;
+    if (jugador == 2)
+    {
+        if (juego->puntosPlayer2 <= 0)
+        {
+            // No hay puntos para averiguar la vocal
+            return 2;
         }
     }
-    else{
-        puntuacion=50;
+    else
+    {
+        puntuacion = 50;
     }
     for (int i = 0; i < strlen((*juego).fraseCifrada); i++)
     {
@@ -83,19 +104,20 @@ int descifrarLetra(char letra, struct Juego *juego,int jugador)
             contador++;
         }
     }
-    if(puntuacion>0){
+    if (puntuacion > 0)
+    {
 
-    
-    if(jugador == 1){
-        juego->puntosPlayer1+=puntuacion*contador;
-    }
-    if(jugador == 2){
-        juego->puntosPlayer2+=puntuacion*contador;
-    }
-    else{
-        printf("Error, solo hay dos jugadores\n");
-    }
+        if (jugador == 1)
+        {
+            juego->puntosPlayer1 += puntuacion * contador;
+        }
+        if (jugador == 2)
+        {
+            juego->puntosPlayer2 += puntuacion * contador;
+        }
+        
     }
     return contador;
 }
 #endif
+
