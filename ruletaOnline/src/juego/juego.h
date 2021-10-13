@@ -33,6 +33,22 @@ struct Juego crearCifrado(char frase[])
     return juego;
 }
 
+int comparaFrase(struct Juego juego, char *fraseResuelta) {
+    if(fraseResuelta[strlen(fraseResuelta) - 1] == '\n')
+        fraseResuelta[strlen(fraseResuelta) - 1] == '\0';
+    
+    if(strcmp(juego.frase, fraseResuelta) == 0)
+        return 1;
+    
+    return 0;
+}
+
+int fraseResuelta(struct Juego juego) {
+    if(strcmp(juego.frase, juego.fraseCifrada) == 0)
+        return 1;
+    return 0;
+}
+
 int apareceLetra(char letra, struct Juego juego)
 {
     if (strchr(juego.frase, letra))
@@ -120,4 +136,5 @@ int descifrarLetra(char letra, struct Juego *juego, int jugador)
     return contador;
 }
 #endif
+
 
