@@ -43,6 +43,12 @@ struct Usuario
     // La variable turno se pone a 1 cuando le toque jugar, en cuyo caso podrá enviar una consonante, vocal, etc
     bool turno;
 
+    // Variable que almacena la partida que está jugando, puntero para que asi los jugadores apunten a la misma partida
+    struct Juego *partida;
+
+    // Variable que almacena la puntuación del juego
+    int puntuacion;
+
 } typedef Usuario;
 
 void manejador(int signum);
@@ -80,18 +86,6 @@ int main(int argc, char **argv)
     char identificador[MSG_SIZE];
 
     int on, ret;
-
-    // Vector de usuarios del sistema, inicializo a -1 para que se sepa que no se ha recibido, y también que nadie no está listo para una partida
-    // También inicializo por defecto los char* vacios
-    Usuario usuarios[MAX_CLIENTS];
-    for (size_t i = 0; i < MAX_CLIENTS; ++i)
-    {
-        usuarios[i].sd = -1;
-        usuarios[i].nickName[0] = '\0';
-        usuarios[i].password[0] = '\0';
-        usuarios[i].rival = -1;
-        usuarios[i].turno = 0;
-    }
 
     // Se abre el socket
     sd = socket(AF_INET, SOCK_STREAM, 0);
@@ -170,6 +164,15 @@ int main(int argc, char **argv)
                             if (numClientes < MAX_CLIENTS)
                             {
                                 arrayClientes[numClientes].sd = new_sd;
+
+                                // Inicializo el nuevo cliente para borrar sus posibles antiguos valores
+                                arrayClientes[numClientes].nickName[0] = '\0';
+                                arrayClientes[numClientes].password[0] = '\0';
+                                arrayClientes[numClientes].rival = -1;
+                                arrayClientes[numClientes].turno = 0;
+                                arrayClientes[numClientes].partida = (struct Juego *)malloc(sizeof(struct Juego));
+                                arrayClientes[numClientes].puntuacion = 0;
+
                                 numClientes++;
                                 FD_SET(new_sd, &readfds);
 
@@ -387,9 +390,12 @@ int main(int argc, char **argv)
                                             perror("Error al invocar a send().");
                                         }*/
 
-                                        // De esto te encargas tu nick
+                                        // Creo el refran y la estructura de juego en cada usuario
                                         char refran[64] = "Por la boca muere el pez";
-                                         struct Juego juego = crearCifrado(refran);
+
+                                        struct Juego juego = crearCifrado(refran);
+                                        arrayClientes[indexPlayer1].partida = &juego;
+                                        arrayClientes[indexPlayer2].partida = &juego;
 
                                         bzero(buffer, sizeof(buffer));
                                         sprintf(buffer, "+Ok. Empieza la partida. FRASE: %s.\n+Ok. Turno de partida\n", juego.fraseCifrada);
@@ -407,6 +413,9 @@ int main(int argc, char **argv)
                                         {
                                             perror("Error al invocar a send().");
                                         }
+
+                                        arrayClientes[indexPlayer1].turno = 1;
+                                        arrayClientes[indexPlayer2].turno = 0;
                                     }
                                 }
 
@@ -418,6 +427,220 @@ int main(int argc, char **argv)
                                     {
                                         perror("Error al invocar a send().");
                                     }
+                                }
+                            }
+
+                            else if (strncmp(buffer, "CONSONANTE ", 11) == 0)
+                            {
+                                int indexPlayer = getCliente(i, arrayClientes, numClientes);
+
+                                if (arrayClientes[indexPlayer].rival == -1)
+                                {
+                                    bzero(buffer, sizeof(buffer));
+                                    strcpy(buffer, "-Err. Usted no ha comenzado partida\n");
+                                    if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                    {
+                                        perror("Error al invocar a send().");
+                                    }
+                                }
+
+                                else if (arrayClientes[indexPlayer].turno == 0)
+                                {
+                                    bzero(buffer, sizeof(buffer));
+                                    strcpy(buffer, "-Err. No es su turno todavía\n");
+                                    if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                    {
+                                        perror("Error al invocar a send().");
+                                    }
+                                }
+
+                                // Compruebo si aparece la consonante
+                                else
+                                {
+                                    char consonante;
+                                    sscanf(buffer, "CONSONANTE %c", &consonante);
+
+                                    // La letra ya fue escogida
+                                    if (letraEscogida(consonante, *arrayClientes[getCliente(i, arrayClientes, numClientes)].partida) == 0)
+                                    {
+                                        bzero(buffer, sizeof(buffer));
+                                        strcpy(buffer, "-Err. La letra ya se ha seleccionado previamente\n");
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+                                    }
+
+                                    // Si ha acertado la letra
+                                    else if (apareceLetra(consonante, *arrayClientes[getCliente(i, arrayClientes, numClientes)].partida) != -1)
+                                    {
+                                        descifrarLetra(consonante, arrayClientes[getCliente(i, arrayClientes, numClientes)].partida, i);
+
+                                        bzero(buffer, sizeof(buffer));
+                                        sprintf(buffer, "+Ok. %c aparece %d veces. FRASE: %s\n", consonante, numeroOcurrenciasLetra(consonante, *arrayClientes[indexPlayer].partida), arrayClientes[getCliente(i, arrayClientes, numClientes)].partida->fraseCifrada);
+
+                                        // Asigno la puntuación al jugador i
+                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].puntuacion += 50;
+
+                                        // La letra es correcta, por tanto sigue jugando este jugador hasta que falle
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+
+                                        if (send(arrayClientes[getCliente(i, arrayClientes, numClientes)].rival, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+                                    }
+
+                                    // El jugador ha fallado
+                                    else
+                                    {
+
+                                        bzero(buffer, sizeof(buffer));
+                                        sprintf(buffer, "+Ok. %c aparece 0 veces. FRASE: %s.\n+Ok. Turno del otro jugador\n", consonante, arrayClientes[getCliente(i, arrayClientes, numClientes)].partida->fraseCifrada);
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+
+                                        bzero(buffer, sizeof(buffer));
+                                        sprintf(buffer, "+Ok. %c aparece 0 veces. FRASE: %s.\n+Ok. Turno de partida\n", consonante, arrayClientes[getCliente(i, arrayClientes, numClientes)].partida->fraseCifrada);
+                                        if (send(arrayClientes[getCliente(i, arrayClientes, numClientes)].rival, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+
+                                        // Cambio el turno del rival
+                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].turno = 0;
+                                        int sd_rival = arrayClientes[getCliente(i, arrayClientes, numClientes)].rival;
+
+                                        arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].turno = 1;
+                                    }
+                                }
+                            }
+
+                            else if (strncmp(buffer, "VOCAL ", 6) == 0)
+                            {
+                                int indexPlayer = getCliente(i, arrayClientes, numClientes);
+
+                                if (arrayClientes[indexPlayer].rival == -1)
+                                {
+                                    bzero(buffer, sizeof(buffer));
+                                    strcpy(buffer, "-Err. Usted no ha comenzado partida\n");
+                                    if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                    {
+                                        perror("Error al invocar a send().");
+                                    }
+                                }
+
+                                else if (arrayClientes[indexPlayer].turno == 0)
+                                {
+                                    bzero(buffer, sizeof(buffer));
+                                    strcpy(buffer, "-Err. No es su turno todavía\n");
+                                    if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                    {
+                                        perror("Error al invocar a send().");
+                                    }
+                                }
+
+                                // Compruebo si aparece la vocal
+                                else
+                                {
+                                    char vocal;
+                                    sscanf(buffer, "VOCAL %c", &vocal);
+
+                                    // La letra introducida no es una vocal
+                                    if (vocal != 'a' && vocal != 'e' && vocal != 'i' && vocal != 'o' && vocal != 'u')
+                                    {
+                                        bzero(buffer, sizeof(buffer));
+                                        strcpy(buffer, "-Err. La letra seleccionada no es una vocal\n");
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+                                    }
+
+                                    // El usuario no tiene puntuación para comprar una vocal
+                                    else if (arrayClientes[getCliente(i, arrayClientes, numClientes)].puntuacion < 50)
+                                    {
+                                        bzero(buffer, sizeof(buffer));
+                                        strcpy(buffer, "-Err. No tiene suficiente puntuación para comprar una vocal\n");
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+                                    }
+
+                                    // La letra ya fue escogida
+                                    else if (letraEscogida(vocal, *arrayClientes[getCliente(i, arrayClientes, numClientes)].partida) == 0)
+                                    {
+                                        bzero(buffer, sizeof(buffer));
+                                        strcpy(buffer, "-Err. La letra ya se ha seleccionado previamente\n");
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+                                    }
+
+                                    // Si ha acertado la letra
+                                    else if (apareceLetra(vocal, *arrayClientes[getCliente(i, arrayClientes, numClientes)].partida) != -1)
+                                    {
+                                        descifrarLetra(vocal, arrayClientes[getCliente(i, arrayClientes, numClientes)].partida, i);
+
+                                        bzero(buffer, sizeof(buffer));
+                                        sprintf(buffer, "+Ok. %c aparece %d veces. FRASE: %s\n", vocal, numeroOcurrenciasLetra(vocal, *arrayClientes[indexPlayer].partida), arrayClientes[getCliente(i, arrayClientes, numClientes)].partida->fraseCifrada);
+
+                                        // Le quito 50 puntos dado que ha consumido una vocal
+                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].puntuacion -= 50;
+
+                                        // La letra es correcta, por tanto sigue jugando este jugador hasta que falle
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+
+                                        if (send(arrayClientes[getCliente(i, arrayClientes, numClientes)].rival, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+                                    }
+
+                                    // El jugador ha fallado
+                                    else
+                                    {
+
+                                        bzero(buffer, sizeof(buffer));
+                                        sprintf(buffer, "+Ok. %c aparece 0 veces. FRASE: %s.\n+Ok. Turno del otro jugador\n", vocal, arrayClientes[getCliente(i, arrayClientes, numClientes)].partida->fraseCifrada);
+                                        if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+
+                                        bzero(buffer, sizeof(buffer));
+                                        sprintf(buffer, "+Ok. %c aparece 0 veces. FRASE: %s.\n+Ok. Turno de partida\n", vocal, arrayClientes[getCliente(i, arrayClientes, numClientes)].partida->fraseCifrada);
+                                        if (send(arrayClientes[getCliente(i, arrayClientes, numClientes)].rival, buffer, sizeof(buffer), 0) == -1)
+                                        {
+                                            perror("Error al invocar a send().");
+                                        }
+
+                                        // Cambio el turno del rival
+                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].turno = 0;
+                                        int sd_rival = arrayClientes[getCliente(i, arrayClientes, numClientes)].rival;
+
+                                        arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].turno = 1;
+                                    }
+                                }
+                            }
+
+                            else if (strcmp(buffer, "PUNTUACION\n") == 0)
+                            {
+                                bzero(buffer, sizeof(buffer));
+                                sprintf(buffer, "+Ok. Su puntuación es de: %d\n", arrayClientes[getCliente(i, arrayClientes, numClientes)].puntuacion);
+                                if (send(i, buffer, sizeof(buffer), 0) == -1)
+                                {
+                                    perror("Error al invocar a send().");
                                 }
                             }
 
