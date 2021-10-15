@@ -69,6 +69,10 @@ void guardarUsuario(char *userName, char *password);
 
 int getCliente(int socket, Usuario clientes[], const int numClientes);
 
+int contarFrases();
+
+void getFrase(char * frase);
+
 int main(int argc, char **argv)
 {
     system("clear");
@@ -82,7 +86,8 @@ int main(int argc, char **argv)
     int salida;
     // Array con los clientes del sistema
     Usuario arrayClientes[MAX_CLIENTS];
-
+    
+    //frases
     // Array con las partidas en curso
     Partida partidas[MAX_GAMES];
     int numClientes = 0;
@@ -444,8 +449,10 @@ int main(int argc, char **argv)
                                             char refran[64] = "por la boca muere el pez";
 
                                             struct Juego *juego = (struct Juego *)malloc(sizeof(struct Juego));
-
-                                            *juego = crearCifrado(refran);
+                                            char nuevaFrase[256];
+                                            printf("%s",nuevaFrase);
+                                            getFrase(nuevaFrase);
+                                            *juego = crearCifrado(nuevaFrase);
                                             arrayClientes[indexPlayer1].partida = juego;
                                             arrayClientes[indexPlayer2].partida = juego;
 
@@ -826,9 +833,15 @@ int main(int argc, char **argv)
                                 {
 
                                     char fraseResuelta[350];
-                                    sscanf(buffer, "RESOLVER %s", fraseResuelta);
-
+                                    memcpy(fraseResuelta,&buffer[9],strlen(buffer)-1);
+                                    printf("%s",fraseResuelta);
                                     // Si ha acertado la frase
+				for(int i=0;i<strlen(fraseResuelta);i++){
+					if(fraseResuelta[i] == '_'){
+					fraseResuelta[i]=' ';
+					}
+				}
+                printf("%s",fraseResuelta);
                                     if (comparaFrase(*arrayClientes[getCliente(i, arrayClientes, numClientes)].partida, fraseResuelta))
                                     {
                                         bzero(buffer, sizeof(buffer));
@@ -1070,4 +1083,46 @@ void guardarUsuario(char *userName, char *password)
     fclose(file);
 
     return;
+}
+int contarFrases(){
+    FILE *file;
+    char buffer[256];
+    srand(time(NULL));
+    int contador=0;
+    char frase[256];
+    file = fopen("../data/frases.txt", "r");
+    if (file == NULL)
+    {
+        perror("Error al llamar a fopen().");
+
+    }
+    while (fgets(buffer, 256, file)){
+        contador++;
+    }
+    fclose(file);
+    return contador;
+}
+void getFrase(char * frase)
+{
+    FILE *file;
+    char buffer[256];
+    srand(time(NULL));
+    int contador=contarFrases();
+    int random=rand()%contador;
+    int n=0;
+    file = fopen("../data/frases.txt", "r");
+    if (file == NULL)
+    {
+        perror("Error al llamar a fopen().");
+
+    }
+    while (fgets(buffer, 256, file))
+    {   
+        if(n==random){
+                strcpy(frase,buffer);
+        }
+                n++;
+    }
+
+    fclose(file);
 }
