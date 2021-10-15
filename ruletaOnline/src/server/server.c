@@ -567,9 +567,10 @@ int main(int argc, char **argv)
                                             arrayClientes[getCliente(i, arrayClientes, numClientes)].enPartida = false;
                                             arrayClientes[getCliente(i, arrayClientes, numClientes)].turno = 0;
                                             arrayClientes[getCliente(i, arrayClientes, numClientes)].encolado = false;
-                                            arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
 
                                             int sd_rival = arrayClientes[getCliente(i, arrayClientes, numClientes)].rival;
+                                            arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
+
                                             arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].enPartida = false;
                                             arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].turno = 0;
                                             arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].encolado = false;
@@ -712,9 +713,10 @@ int main(int argc, char **argv)
                                             arrayClientes[getCliente(i, arrayClientes, numClientes)].enPartida = false;
                                             arrayClientes[getCliente(i, arrayClientes, numClientes)].turno = 0;
                                             arrayClientes[getCliente(i, arrayClientes, numClientes)].encolado = false;
-                                            arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
 
                                             int sd_rival = arrayClientes[getCliente(i, arrayClientes, numClientes)].rival;
+                                            arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
+
                                             arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].enPartida = false;
                                             arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].turno = 0;
                                             arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].encolado = false;
@@ -833,15 +835,14 @@ int main(int argc, char **argv)
                                 {
 
                                     char fraseResuelta[350];
-                                    memcpy(fraseResuelta,&buffer[9],strlen(buffer)-1);
-                                    printf("%s",fraseResuelta);
+                                    strcpy(fraseResuelta, buffer+9);
+                                    //memcpy(fraseResuelta,&buffer[9],strlen(buffer)-1);
                                     // Si ha acertado la frase
 				for(int i=0;i<strlen(fraseResuelta);i++){
 					if(fraseResuelta[i] == '_'){
 					fraseResuelta[i]=' ';
 					}
 				}
-                printf("%s",fraseResuelta);
                                     if (comparaFrase(*arrayClientes[getCliente(i, arrayClientes, numClientes)].partida, fraseResuelta))
                                     {
                                         bzero(buffer, sizeof(buffer));
@@ -861,9 +862,11 @@ int main(int argc, char **argv)
                                         arrayClientes[getCliente(i, arrayClientes, numClientes)].enPartida = false;
                                         arrayClientes[getCliente(i, arrayClientes, numClientes)].turno = 0;
                                         arrayClientes[getCliente(i, arrayClientes, numClientes)].encolado = false;
-                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
 
                                         int sd_rival = arrayClientes[getCliente(i, arrayClientes, numClientes)].rival;
+                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
+
+                                        
                                         arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].enPartida = false;
                                         arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].turno = 0;
                                         arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].encolado = false;
@@ -890,9 +893,11 @@ int main(int argc, char **argv)
                                         arrayClientes[getCliente(i, arrayClientes, numClientes)].enPartida = false;
                                         arrayClientes[getCliente(i, arrayClientes, numClientes)].turno = 0;
                                         arrayClientes[getCliente(i, arrayClientes, numClientes)].encolado = false;
-                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
 
                                         int sd_rival = arrayClientes[getCliente(i, arrayClientes, numClientes)].rival;
+                                        arrayClientes[getCliente(i, arrayClientes, numClientes)].rival = -1;
+
+                                        
                                         arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].enPartida = false;
                                         arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].turno = 0;
                                         arrayClientes[getCliente(sd_rival, arrayClientes, numClientes)].encolado = false;
@@ -1100,7 +1105,7 @@ int contarFrases(){
         contador++;
     }
     fclose(file);
-    return contador;
+    return contador-1;
 }
 void getFrase(char * frase)
 {
@@ -1123,6 +1128,5 @@ void getFrase(char * frase)
         }
                 n++;
     }
-
     fclose(file);
 }
